@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { ColumnChart } from "@/components/charts/column-chart";
 import { Sparkline } from "@/components/charts/sparkline";
+import { DemoHeader } from "@/components/demo/demo-header";
 import { DemoNotice } from "@/components/demo/demo-notice";
-import { MetricCard } from "@/components/metrics/metric-card";
+import { MetricCard, MetricStrip } from "@/components/metrics/metric-card";
 import { DeltaBadge } from "@/components/metrics/delta-badge";
 import { PeriodPicker } from "@/components/metrics/period-picker";
 import { cardClass } from "@/components/ui/card";
@@ -77,33 +78,33 @@ export default async function DemoOperatorPage({ searchParams }: { searchParams:
   const totalRequests = api.reduce((sum, p) => sum + p.totals.requests, 0);
   const full = new Intl.NumberFormat("en");
   const vsLabel = `vs previous ${period.label.replace(/^Last /, "")}`;
-  const th = "py-2 pl-3 text-right font-medium";
-  const td = "py-2 pl-3 text-right align-top tabular-nums";
+  const th = "py-3 pl-4 text-right text-xs font-medium";
+  const td = "py-4 pl-4 text-right align-top tabular-nums";
 
   return (
     <section>
       <DemoNotice sample={sample} />
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">SCF operator view</h1>
-      <p className="mt-1 text-muted">
+      <DemoHeader
+        title="SCF operator view"
+        picker={<PeriodPicker className="" current={period.key} href={(k) => `/operator?period=${k}`} />}
+      >
         What SCF operators see: the same metrics for every enrolled project, side by side. This demo lists only the demo
-        project. The real view adds filtering, sorting and side-by-side comparison, and requires an operator account.
-        All times in UTC.
-      </p>
-      <PeriodPicker current={period.key} href={(k) => `/operator?period=${k}`} />
+        project; the real view adds filtering, sorting and comparison, and needs an operator account. Times are UTC.
+      </DemoHeader>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <MetricStrip className="mt-8">
         <MetricCard label="Enrolled projects" value={formatCount(web.projects.length)} />
         <MetricCard label="Visitors" value={formatCount(totalVisitors)} />
         <MetricCard label="Page views" value={formatCount(totalPageviews)} />
         <MetricCard label="API requests" value={formatCount(totalRequests)} />
-      </div>
+      </MetricStrip>
 
-      <h2 className="mt-8 text-xl font-semibold tracking-tight">Web analytics across projects</h2>
-      <div className={`${cardClass} mt-3 overflow-x-auto px-4 py-1`}>
+      <h2 className="mt-14 border-t border-border pt-8 text-xl font-semibold tracking-tight">Web analytics across projects</h2>
+      <div className={`${cardClass} mt-4 overflow-x-auto px-5 py-1`}>
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-border text-muted">
             <tr>
-              <th className="py-2 font-medium">Project</th>
+              <th className="py-3 text-xs font-medium">Project</th>
               <th className={th}>Websites</th>
               <th className={th}>Page views</th>
               <th className={th}>Visitors</th>
@@ -115,13 +116,13 @@ export default async function DemoOperatorPage({ searchParams }: { searchParams:
           <tbody className="divide-y divide-border">
             {web.projects.map((p) => (
               <tr key={p.tenantId}>
-                <td className="py-2 align-top">
-                  <span className="font-medium">{p.name}</span>
-                  <span className="ml-2 font-mono text-xs text-muted">{p.slug}</span>
+                <td className="py-4 align-top">
+                  <span className="block text-base font-semibold">{p.name}</span>
+                  <span className="block font-mono text-xs text-muted">{p.slug}</span>
                 </td>
                 <td className={td}>{p.sites}</td>
                 {p.totals === null || p.previous === null ? (
-                  <td colSpan={5} className="py-2 pl-3 text-right align-top text-muted">
+                  <td colSpan={5} className="py-4 pl-4 text-right align-top text-muted">
                     Unavailable
                   </td>
                 ) : (
@@ -148,7 +149,7 @@ export default async function DemoOperatorPage({ searchParams }: { searchParams:
       </div>
       <p className="mt-2 text-xs text-muted">Changes are {vsLabel}. Projects with several websites add them up.</p>
 
-      <div className={`${cardClass} mt-6`}>
+      <div className={`${cardClass} mt-4`}>
         <h2 className="text-[0.8125rem] font-medium text-muted">Visitors per {period.unit}</h2>
         <div className="mt-4">
           <ColumnChart
@@ -169,12 +170,12 @@ export default async function DemoOperatorPage({ searchParams }: { searchParams:
         </div>
       </div>
 
-      <h2 className="mt-8 text-xl font-semibold tracking-tight">API analytics across projects</h2>
-      <div className={`${cardClass} mt-3 overflow-x-auto px-4 py-1`}>
+      <h2 className="mt-14 border-t border-border pt-8 text-xl font-semibold tracking-tight">API analytics across projects</h2>
+      <div className={`${cardClass} mt-4 overflow-x-auto px-5 py-1`}>
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-border text-muted">
             <tr>
-              <th className="py-2 font-medium">Project</th>
+              <th className="py-3 text-xs font-medium">Project</th>
               <th className={th}>Services</th>
               <th className={th}>Requests</th>
               <th className={th}>5xx</th>
@@ -186,13 +187,13 @@ export default async function DemoOperatorPage({ searchParams }: { searchParams:
           <tbody className="divide-y divide-border">
             {api.map((p) => (
               <tr key={p.tenantId}>
-                <td className="py-2 align-top">
-                  <span className="font-medium">{p.name}</span>
-                  <span className="ml-2 font-mono text-xs text-muted">{p.slug}</span>
+                <td className="py-4 align-top">
+                  <span className="block text-base font-semibold">{p.name}</span>
+                  <span className="block font-mono text-xs text-muted">{p.slug}</span>
                 </td>
                 <td className={td}>{p.services}</td>
                 {p.totals.requests === 0 ? (
-                  <td colSpan={5} className="py-2 pl-3 text-right align-top text-muted">
+                  <td colSpan={5} className="py-4 pl-4 text-right align-top text-muted">
                     {p.services === 0 ? "No API services" : "No requests in this period"}
                   </td>
                 ) : (

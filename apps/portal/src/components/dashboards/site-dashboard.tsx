@@ -15,7 +15,7 @@ import {
   walletName,
 } from "@/lib/format";
 import { DeltaBadge } from "@/components/metrics/delta-badge";
-import { MetricCard } from "@/components/metrics/metric-card";
+import { MetricCard, MetricStrip } from "@/components/metrics/metric-card";
 import { RankedList, type RankedRow } from "@/components/metrics/ranked-list";
 import { cardClass } from "@/components/ui/card";
 import { ChartFrame } from "@/components/charts/chart-frame";
@@ -44,7 +44,7 @@ export function SiteDashboardView({ period, data }: { period: Period; data: Site
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <MetricStrip className="mt-5">
         <StatTile
           label="Page views"
           value={formatCount(totals.pageviews)}
@@ -72,7 +72,7 @@ export function SiteDashboardView({ period, data }: { period: Period; data: Site
           vs={vsLabel}
           upIsGood={false}
         />
-      </div>
+      </MetricStrip>
 
       <ChartFrame
         className="mt-4"

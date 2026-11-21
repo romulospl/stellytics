@@ -4,7 +4,7 @@ import { ChartFrame } from "@/components/charts/chart-frame";
 import { ColumnChart } from "@/components/charts/column-chart";
 import { PALETTE } from "@/components/charts/palette";
 import { Sparkline } from "@/components/charts/sparkline";
-import { MetricCard } from "@/components/metrics/metric-card";
+import { MetricCard, MetricStrip } from "@/components/metrics/metric-card";
 import { RankedList } from "@/components/metrics/ranked-list";
 import { cardClass } from "@/components/ui/card";
 import type { Period } from "@/lib/period";
@@ -33,7 +33,7 @@ export function ServiceDashboardView({ period, data }: { period: Period; data: A
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <MetricStrip className="mt-5">
         <StatTile label="Requests" value={formatCount(totals.requests)} trend={points.map((p) => p.requests)} />
         <StatTile
           label="Server errors (5xx)"
@@ -43,7 +43,7 @@ export function ServiceDashboardView({ period, data }: { period: Period; data: A
         />
         <StatTile label="Median latency (p50)" value={formatLatency(totals.p50)} trend={points.map((p) => p.p50)} />
         <StatTile label="p95 latency" value={formatLatency(totals.p95)} trend={points.map((p) => p.p95)} />
-      </div>
+      </MetricStrip>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <div className={card}>

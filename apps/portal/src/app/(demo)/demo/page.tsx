@@ -10,10 +10,11 @@ import { parsePeriodKey, type Period, resolvePeriod } from "@/lib/period";
 import { getSiteDashboard, type SiteDashboard, UmamiError } from "@/lib/umami/stats";
 import { ServiceDashboardView } from "@/components/dashboards/service-dashboard";
 import { SiteDashboardView } from "@/components/dashboards/site-dashboard";
+import { DemoHeader } from "@/components/demo/demo-header";
 import { DemoNotice } from "@/components/demo/demo-notice";
 import { PeriodPicker } from "@/components/metrics/period-picker";
 
-export const metadata: Metadata = { title: "Tenet view" };
+export const metadata: Metadata = { title: "Tenant view" };
 // Rendered per request: DEMO_TENANT_SLUG and the data are read at run time,
 // never at build time (where the demo is off and the page would be a fixed 404).
 export const dynamic = "force-dynamic";
@@ -69,22 +70,27 @@ export default async function DemoPage({ searchParams }: { searchParams: Promise
   return (
     <section>
       <DemoNotice sample={sample} />
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{name}</h1>
-      <p className="mt-1 text-muted">
+      <DemoHeader
+        title={name}
+        picker={<PeriodPicker className="" current={period.key} href={(k) => `/demo?period=${k}`} />}
+      >
         What an enrolled project sees: its own websites and API services, and nothing from any other project.
-      </p>
-      <PeriodPicker current={period.key} href={(k) => `/demo?period=${k}`} />
+      </DemoHeader>
 
       {web.length === 0 && api.length === 0 && (
         <p className="mt-6 text-muted">The demo project has no website or API service yet.</p>
       )}
 
       {web.map((site) => (
-        <section key={site.id} aria-labelledby={`site-${site.id}`} className="mt-10">
-          <h2 id={`site-${site.id}`} className="text-xl font-semibold tracking-tight">
-            Web analytics: {site.name}
-          </h2>
-          <p className="mt-1 text-sm text-muted">{site.domain}</p>
+        <section key={site.id} aria-labelledby={`site-${site.id}`} className="mt-14 border-t border-border pt-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+            <h2 id={`site-${site.id}`} className="text-xl font-semibold tracking-tight">
+              Web analytics
+            </h2>
+            <p className="text-sm text-muted">
+              {site.name} on <span className="font-mono">{site.domain}</span>
+            </p>
+          </div>
           {site.data ? (
             <SiteDashboardView period={period} data={site.data} />
           ) : (
@@ -96,10 +102,13 @@ export default async function DemoPage({ searchParams }: { searchParams: Promise
       ))}
 
       {api.map((service) => (
-        <section key={service.id} aria-labelledby={`service-${service.id}`} className="mt-10">
-          <h2 id={`service-${service.id}`} className="text-xl font-semibold tracking-tight">
-            API analytics: {service.name}
-          </h2>
+        <section key={service.id} aria-labelledby={`service-${service.id}`} className="mt-14 border-t border-border pt-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+            <h2 id={`service-${service.id}`} className="text-xl font-semibold tracking-tight">
+              API analytics
+            </h2>
+            <p className="text-sm text-muted">{service.name}</p>
+          </div>
           {service.data ? (
             <ServiceDashboardView period={period} data={service.data} />
           ) : (

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DemoShell } from "@/components/demo/demo-shell";
 import { DemoNotice } from "@/components/demo/demo-notice";
-import { cardClass } from "@/components/ui/card";
 import { loadDemoContext } from "@/lib/access";
 import { type ApiCounts, type ApiServiceDashboard, getServiceDashboard } from "@/lib/data/api-metrics";
 import { listApiServices } from "@/lib/data/api-services";
@@ -88,12 +87,36 @@ function sumSeries<P>(period: Period, lists: P[][], pick: (point: P) => number):
   return period.buckets.map((_, i) => lists.reduce((sum, list) => sum + (list[i] ? pick(list[i]) : 0), 0));
 }
 
-function Panel({ title, value, unit, period, series }: { title: string; value: string; unit: string; period: Period; series: number[] }) {
+type Fact = { label: string; value: string; note?: string };
+
+// One half of the card (web or API): the headline figure, its daily chart and
+// the supporting figures of the same source.
+function Panel({
+  title,
+  lead,
+  unit,
+  period,
+  series,
+  facts,
+  summary,
+}: {
+  title: string;
+  lead: { label: string; value: string };
+  unit: string;
+  period: Period;
+  series: number[];
+  facts: Fact[];
+  summary: string;
+}) {
   return (
-    <section className="min-w-0">
-      <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">{title}</h2>
-      <p className="mt-2 text-4xl font-semibold tracking-tight tabular-nums">{value}</p>
-      <div className="mt-4">
+    <section aria-labelledby={`card-${title}`} className="min-w-0">
+      <h2 id={`card-${title}`} className="text-xl font-semibold tracking-tight">
+        {title}
+      </h2>
+      <p className="mt-1 text-sm text-muted">{summary}</p>
+      <p className="mt-8 text-sm font-medium text-muted">{lead.label}</p>
+      <p className="mt-1 text-6xl leading-none font-bold tracking-tight tabular-nums">{lead.value}</p>
+      <div className="mt-8">
         <ColumnChart
           label={`${unit} per day`}
           currentIncomplete
@@ -110,6 +133,17 @@ function Panel({ title, value, unit, period, series }: { title: string; value: s
           })}
         />
       </div>
+      <dl className="mt-6 divide-y divide-border border-y border-border">
+        {facts.map((fact) => (
+          <div key={fact.label} className="flex items-baseline justify-between gap-4 py-3">
+            <dt className="text-sm text-muted">{fact.label}</dt>
+            <dd className="text-right text-lg font-semibold tabular-nums">
+              {fact.value}
+              {fact.note && <span className="ml-2 text-xs font-normal text-muted">{fact.note}</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }
@@ -125,48 +159,64 @@ export default async function PublicCardPage({ params }: { params: Promise<{ slu
   const events = sites.reduce((sum, d) => sum + (d?.events.reduce((n, e) => n + e.count, 0) ?? 0), 0);
   const requests = api.totals.requests;
 
-  const stats: { label: string; value: string }[] = [
+  const webFacts: Fact[] = [
     { label: "Page views", value: web.totals ? formatCount(web.totals.pageviews) : "—" },
-    { label: "Events", value: formatCount(events) },
-    { label: "API p50 latency", value: formatLatency(api.totals.p50) },
-    { label: "API p95 latency", value: formatLatency(api.totals.p95) },
-    { label: "Server errors (5xx)", value: formatCount(api.totals.serverErrors) },
+    { label: "Custom events", value: formatCount(events) },
+  ];
+  const apiFacts: Fact[] = [
+    { label: "Typical response time (p50)", value: formatLatency(api.totals.p50) },
+    { label: "Slowest 5% of responses (p95)", value: formatLatency(api.totals.p95) },
+    {
+      label: "Server errors (5xx)",
+      value: formatCount(api.totals.serverErrors),
+      note: requests > 0 ? `${formatShare(api.totals.serverErrors, requests)} of requests` : undefined,
+    },
   ];
 
   return (
     <DemoShell>
       <DemoNotice sample={sample} />
-      <article className={`${cardClass} mt-6 p-0`}>
-        <header className="p-6">
-          <p className="text-xs font-semibold tracking-wide text-muted uppercase">Usage measured by stellytics</p>
-          <h1 className="mt-1 text-4xl font-semibold tracking-tight">{web.name}</h1>
-          <p className="mt-1 text-sm text-muted">
-            {period.label} · {plural(web.sites, "website", "websites")} · {plural(api.services, "API service", "API services")}
-          </p>
-        </header>
-
-        <div className="grid gap-8 border-t border-border p-6 md:grid-cols-2">
-          <Panel title="Visitors, 30 days" value={web.totals ? formatCount(web.totals.visitors) : "—"} unit="visitors" period={period} series={webSeries} />
-          <Panel title="API requests, 30 days" value={formatCount(requests)} unit="requests" period={period} series={apiSeries} />
-        </div>
-
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border p-6 sm:grid-cols-3 lg:grid-cols-5">
-          {stats.map((stat) => (
-            <div key={stat.label}>
-              <dt className="text-[0.8125rem] font-medium text-muted">{stat.label}</dt>
-              <dd className="mt-1 text-2xl leading-tight font-semibold tracking-tight tabular-nums">{stat.value}</dd>
-              {stat.label === "Server errors (5xx)" && requests > 0 && (
-                <dd className="mt-0.5 text-xs text-muted">{formatShare(api.totals.serverErrors, requests)} of requests</dd>
-              )}
-            </div>
-          ))}
-        </dl>
-
-        <p className="border-t border-border p-6 text-xs text-muted">
-          Totals only, in UTC. Collected without cookies and without storing IP addresses. Visitors are counted per
-          website.
+      <header className="mt-8 max-w-3xl">
+        <h1 className="text-4xl font-bold tracking-tight md:text-6xl">{web.name}</h1>
+        <p className="mt-4 text-lg text-muted">
+          How people use {web.name} on Stellar, over the {period.label.toLowerCase()}. Open to everyone, measured by
+          stellytics.
         </p>
-      </article>
+      </header>
+
+      <div className="mt-14 grid gap-14 border-t border-border pt-10 lg:grid-cols-2 lg:gap-16">
+        <Panel
+          title="Web"
+          summary={plural(web.sites, "website", "websites")}
+          lead={{ label: "Visitors", value: web.totals ? formatCount(web.totals.visitors) : "—" }}
+          unit="visitors"
+          period={period}
+          series={webSeries}
+          facts={webFacts}
+        />
+        <Panel
+          title="API"
+          summary={plural(api.services, "API service", "API services")}
+          lead={{ label: "Requests", value: formatCount(requests) }}
+          unit="requests"
+          period={period}
+          series={apiSeries}
+          facts={apiFacts}
+        />
+      </div>
+
+      <section aria-labelledby="card-method" className="mt-16 grid gap-6 border-t border-border pt-10 md:grid-cols-[1fr_2fr]">
+        <h2 id="card-method" className="text-xl font-semibold tracking-tight">
+          How this is measured
+        </h2>
+        <ul className="max-w-[62ch] space-y-3 text-muted">
+          <li>Every figure is measured by the platform itself, not reported by the project.</li>
+          <li>The page shows totals only, never a single visitor, page or endpoint.</li>
+          <li>No cookies, no browser storage and no stored IP addresses.</li>
+          <li>Each visitor is counted once per website, and all times are UTC.</li>
+          <li>The current day is still in progress, so its bar is hatched.</li>
+        </ul>
+      </section>
     </DemoShell>
   );
 }

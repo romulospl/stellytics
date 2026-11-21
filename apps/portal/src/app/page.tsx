@@ -1,82 +1,68 @@
 import Link from "next/link";
-import { DOCS_URL, GithubMark, REPO_URL, SiteShell } from "@/components/site/site-shell";
-import { Icon, type IconName } from "@/components/ui/icons";
+import { DOCS_URL, SiteShell } from "@/components/site/site-shell";
+import { Icon } from "@/components/ui/icons";
 import { loadDemoContext } from "@/lib/access";
 import { listSites } from "@/lib/data/sites";
 import { cachedDemo } from "@/lib/demo-cache";
 import { env } from "@/lib/env";
 import { trackerScript } from "@/lib/tracker-snippet";
 
-const AUDIENCES: { title: string; text: string; icon: IconName }[] = [
+const TRACKS: { title: string; text: string; steps: string[] }[] = [
   {
-    title: "For projects on Stellar",
-    text: "Add a script, collect web and API metrics, and understand how your project is used.",
-    icon: "code",
+    title: "Web",
+    text: "Pages, visitors, referrers and countries from one script tag.",
+    steps: ["Script on your site", "Gateway", "Dashboard"],
   },
   {
-    title: "For SCF operators",
-    text: "A unified and comparable view of all enrolled projects.",
-    icon: "layers",
-  },
-  {
-    title: "Privacy first",
-    text: "No cookies and no browser storage. Each project sees only its own data.",
-    icon: "shield",
+    title: "API",
+    text: "Requests, errors and latency per route, sent from your app over OpenTelemetry.",
+    steps: ["Your API", "Collector", "Dashboard"],
   },
 ];
 
-// Decorative waves of the hero, in the accent colours of the theme.
-function HeroWaves() {
+const PRIVACY: string[] = [
+  "No cookies and no browser storage.",
+  "The full IP address is never stored.",
+  "Traces, spans and logs are dropped, not kept.",
+  "Each project sees only its own data.",
+];
+
+// What the gateway and the collector keep for one visit and one request.
+function KeepPanel() {
+  const row = "grid grid-cols-[5.5rem_1fr] items-baseline gap-x-4 gap-y-1 py-4 sm:grid-cols-[6.5rem_1fr_1fr]";
+  const cell = "font-mono text-sm break-all";
   return (
-    <svg
-      viewBox="0 0 800 400"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      focusable="false"
-      className="pointer-events-none absolute top-1/2 right-0 hidden h-[26rem] w-1/2 -translate-y-1/2 xl:block"
-    >
-      <defs>
-        <linearGradient id="wave-a" x1="0" x2="1">
-          <stop offset="0" stopColor="var(--accent)" stopOpacity="0" />
-          <stop offset="0.35" stopColor="var(--accent)" stopOpacity="0.9" />
-          <stop offset="1" stopColor="var(--accent)" stopOpacity="0.2" />
-        </linearGradient>
-        <linearGradient id="wave-b" x1="0" x2="1">
-          <stop offset="0" stopColor="#6d5cf0" stopOpacity="0" />
-          <stop offset="0.4" stopColor="#6d5cf0" stopOpacity="0.85" />
-          <stop offset="1" stopColor="#6d5cf0" stopOpacity="0.15" />
-        </linearGradient>
-        <linearGradient id="wave-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--accent)" stopOpacity="0.22" />
-          <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
-        </linearGradient>
-        <filter id="wave-glow" x="-10%" y="-50%" width="120%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <path
-        d="M0 330 C120 300 180 160 290 160 S410 230 480 180 S600 80 700 70 S780 110 800 130 L800 400 L0 400 Z"
-        fill="url(#wave-fill)"
-      />
-      <path
-        d="M0 330 C120 300 180 160 290 160 S410 230 480 180 S600 80 700 70 S780 110 800 130"
-        fill="none"
-        stroke="url(#wave-a)"
-        strokeWidth="2.5"
-        filter="url(#wave-glow)"
-      />
-      <path
-        d="M0 350 C140 330 200 220 310 220 S430 270 520 230 S640 180 720 200 S780 220 800 225"
-        fill="none"
-        stroke="url(#wave-b)"
-        strokeWidth="2.5"
-        filter="url(#wave-glow)"
-      />
-    </svg>
+    <figure className="rounded-card border border-border bg-surface shadow-card">
+      <figcaption className="border-b border-border px-5 py-3 text-sm font-semibold">
+        What stellytics keeps from one visit and one request
+      </figcaption>
+      <div
+        aria-hidden="true"
+        className="hidden grid-cols-[6.5rem_1fr_1fr] gap-x-4 px-5 pt-3 text-xs font-medium text-muted sm:grid"
+      >
+        <span />
+        <span>Received</span>
+        <span>Stored</span>
+      </div>
+      <dl className="divide-y divide-border px-5">
+        <div className={row}>
+          <dt className="text-sm text-muted">Visitor IP</dt>
+          <dd className={`${cell} text-muted line-through decoration-bad-fill/70`}>203.0.113.42</dd>
+          <dd className={`${cell} col-start-2 sm:col-start-auto font-semibold text-accent-text`}>203.0.113.0</dd>
+        </div>
+        <div className={row}>
+          <dt className="text-sm text-muted">API route</dt>
+          <dd className={`${cell} text-muted line-through decoration-bad-fill/70`}>/accounts/GB7B…QXAH/payments/48213</dd>
+          <dd className={`${cell} col-start-2 sm:col-start-auto font-semibold text-accent-text`}>/accounts/:address/payments/:id</dd>
+        </div>
+        <div className={row}>
+          <dt className="text-sm text-muted">Cookies</dt>
+          <dd className={`${cell} text-muted`}>none</dd>
+          <dd className={`${cell} col-start-2 sm:col-start-auto font-semibold text-accent-text`}>none</dd>
+        </div>
+      </dl>
+      <p className="border-t border-border px-5 py-3 text-xs text-muted">Illustrative values. Both rules run before anything is saved.</p>
+    </figure>
   );
 }
 
@@ -100,56 +86,98 @@ export default async function Home() {
 
   return (
     <SiteShell>
-        <section className="relative py-16 md:py-24">
-          <HeroWaves />
-          <div className="relative max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-accent/70 bg-accent-soft/40 px-4 py-1.5 text-sm font-semibold text-accent-text">
-              <Icon name="sparkle" className="size-3.5" />
-              Analytics for the Stellar ecosystem
-            </p>
-            <h1 className="mt-6 text-4xl leading-[1.08] font-bold tracking-tight md:text-6xl">
-              Web and API analytics for Stellar ecosystem projects.
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg text-muted md:text-xl">
-              stellytics is an open-source, multi-tenant analytics platform for the Stellar Community Fund. Get a clear
-              and comparable view of project usage, with privacy by design.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                href="/demo"
-                className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-control bg-accent px-7 text-base font-semibold text-accent-fg hover:brightness-110"
-              >
-                <Icon name="play" className="size-4" />
-                Live demo
-              </Link>
-              <a href={REPO_URL} className={outlineButton}>
-                <GithubMark className="size-5" />
-                GitHub
-              </a>
-              <a href={DOCS_URL} className={outlineButton}>
-                <Icon name="doc" className="size-5" />
-                Docs
-              </a>
-            </div>
-            <p className="mt-4 text-sm text-muted">
-              No account needed: the demo shows {demo ? "this site\u2019s own traffic" : "sample data"}.
-            </p>
+      <section className="grid items-center gap-12 py-16 md:py-24 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+        <div>
+          <h1 className="max-w-[16ch] text-4xl leading-[1.05] font-bold tracking-tight text-balance md:text-6xl">
+            See how your Stellar project is used.
+          </h1>
+          <p className="mt-6 max-w-[56ch] text-lg text-muted md:text-xl">
+            stellytics is open-source analytics for the Stellar Community Fund. Projects see their own web and API
+            traffic. SCF operators compare all of them in one place.
+          </p>
+          <div className="mt-10 flex flex-wrap gap-4">
+            <Link
+              href="/demo"
+              className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-control bg-accent px-7 text-base font-semibold text-accent-fg hover:brightness-110"
+            >
+              <Icon name="play" className="size-4" />
+              Open the live demo
+            </Link>
+            <a href={DOCS_URL} className={outlineButton}>
+              <Icon name="doc" className="size-5" />
+              Read the docs
+            </a>
           </div>
-        </section>
+          <p className="mt-4 text-sm text-muted">
+            No account needed: the demo shows {demo ? "this site\u2019s own traffic" : "sample data"}.
+          </p>
+        </div>
+        <KeepPanel />
+      </section>
 
-        <ul id="features" className="grid scroll-mt-6 gap-8 py-10 md:grid-cols-3 md:gap-0 md:divide-x md:divide-border">
-          {AUDIENCES.map((item) => (
-            <li key={item.title} className="flex gap-6 md:px-8 md:first:pl-0 md:last:pr-0">
-              <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-accent-soft/60 text-accent-text">
-                <Icon name={item.icon} className="size-8" />
-              </span>
-              <div>
-                <h2 className="text-lg font-bold">{item.title}</h2>
-                <p className="mt-1.5 text-muted">{item.text}</p>
-              </div>
+      <section id="features" className="scroll-mt-6 border-t border-border py-14 md:py-20">
+        <h2 className="max-w-[24ch] text-2xl leading-tight font-bold tracking-tight text-balance md:text-4xl">
+          One dashboard for your website and your API.
+        </h2>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {TRACKS.map((track) => (
+            <article key={track.title} className="rounded-card border border-border bg-surface p-6 shadow-card md:p-8">
+              <h3 className="text-xl font-bold">{track.title}</h3>
+              <p className="mt-2 max-w-[44ch] text-muted">{track.text}</p>
+              <ol className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium">
+                {track.steps.map((step, i) => (
+                  <li key={step} className="flex items-center gap-3">
+                    <span
+                      className={`rounded-control border px-3 py-1.5 ${
+                        i === track.steps.length - 1
+                          ? "border-accent bg-accent-soft/60 text-accent-text"
+                          : "border-border-strong bg-surface-2"
+                      }`}
+                    >
+                      {step}
+                    </span>
+                    {i < track.steps.length - 1 && <span aria-hidden="true" className="h-px w-6 bg-border-strong" />}
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-10 border-t border-border py-14 md:py-20 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <h2 className="max-w-[20ch] text-2xl leading-tight font-bold tracking-tight text-balance md:text-4xl">
+            Private by design.
+          </h2>
+          <p className="mt-4 max-w-[48ch] text-muted md:text-lg">
+            Usage data should not cost your users their privacy. stellytics removes what identifies a person before
+            anything reaches the database.
+          </p>
+        </div>
+        <ul className="divide-y divide-border border-y border-border">
+          {PRIVACY.map((item) => (
+            <li key={item} className="flex items-center gap-4 py-4 text-base">
+              <Icon name="check" className="size-5 text-good" />
+              {item}
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="flex flex-wrap items-center justify-between gap-6 rounded-card bg-art-bg px-6 py-10 text-art-fg md:px-12">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Explore a live dashboard.</h2>
+          <p className="mt-2 text-art-muted">No account needed.</p>
+        </div>
+        <Link
+          href="/demo"
+          className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-control bg-art-fg px-7 text-base font-semibold text-art-bg hover:brightness-95"
+        >
+          <Icon name="play" className="size-4" />
+          Open the live demo
+        </Link>
+      </section>
       {websiteId && (
         <script defer src={script.src} integrity={script.integrity} crossOrigin="anonymous" data-site={websiteId} />
       )}

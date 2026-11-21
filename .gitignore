@@ -41,3 +41,7 @@ services/loadtest/*.json
 # Monitoring host settings (SMTP password, dead-man URL; docs/deploy.md)
 monitoring.env
 __pycache__/
+
+# Local assistant and agent files
+CLAUDE.md
+apps/portal/AGENTS.md

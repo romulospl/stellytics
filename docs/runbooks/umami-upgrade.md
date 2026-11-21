@@ -1,6 +1,6 @@
 # Runbook: Umami upgrade
 
-Umami is the base tool ([ADR 0001](../decisions.md#0001-base-tool)) and runs **without a patch**, pinned by tag and digest. Rules: [`docs/umami.md`](../umami.md) and `CLAUDE.md` (the version only goes up by PR, with a release at least two weeks old, without a heavy fork).
+Umami is the base tool ([ADR 0001](../decisions.md#0001-base-tool)) and runs **without a patch**, pinned by tag and digest. Rules: [`docs/umami.md`](../umami.md) and [`docs/dev/constraints.md`](../dev/constraints.md) (the version only goes up by PR, with a release at least two weeks old, without a heavy fork).
 
 ## Symptoms (when to use)
 
@@ -11,7 +11,7 @@ Umami is the base tool ([ADR 0001](../decisions.md#0001-base-tool)) and runs **w
 
 1. Is the release at least 14 days old? Renovate waits (`minimumReleaseAge`); for an urgent security fix, the exception is a decision recorded in the PR, not an automatic one.
 2. Read the release notes looking for: database migration, changes to `/api/send`, `/api/websites/:id/...` (`stats`, `pageviews`, `metrics`), to the recorder (`/api/record`, columns `recorder_enabled` and `replay_config`, tables `session_replay`, `session_replay_saved` and `heatmap_event`) and to environment variables.
-3. Umami appears in `infra/compose/dev.yaml` and `prod.yaml` (image by digest) and in its own rule in `renovate.json`. Look for every mention of the current version: `grep -rn '3.4.1' docs/ CLAUDE.md infra/ apps/ services/ packages/ examples/ renovate.json` (adjust the number) and update the texts and tests that cite the version.
+3. Umami appears in `infra/compose/dev.yaml` and `prod.yaml` (image by digest) and in its own rule in `renovate.json`. Look for every mention of the current version: `grep -rn '3.4.1' docs/ infra/ apps/ services/ packages/ examples/ renovate.json` (adjust the number) and update the texts and tests that cite the version.
 
 ## Action
 
@@ -30,7 +30,7 @@ Umami is the base tool ([ADR 0001](../decisions.md#0001-base-tool)) and runs **w
 - Umami is still closed: step 3 ("Check production") of `docs/deploy.md` (`/api/send` with 404 from outside; Caddy has no route to Umami).
 - A test event arrives through the gateway and shows up on the site's dashboard; the SCF dashboard (`/operator/web`) loads.
 - Isolation: tenant A does not see B's site (the `isolation.test.ts` suite passed in CI on the new version).
-- `docs/umami.md`, `CLAUDE.md` and the other version texts (the `grep` result) reflect the new version. **Do not rewrite ADR 0001 just because of the version**; a new ADR only if the decision changes (for example, a change of tool or a patch).
+- `docs/umami.md`, `docs/dev/constraints.md` and the other version texts (the `grep` result) reflect the new version. **Do not rewrite ADR 0001 just because of the version**; a new ADR only if the decision changes (for example, a change of tool or a patch).
 
 ## Rollback
 
